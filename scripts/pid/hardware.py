@@ -15,21 +15,31 @@ def parse_telemetry(line):
 
 
 class Hardware:
-    def __init__(self, port):
+    def __init__(self, port, on_message=None, on_error=None):
         import serial
         self.serial = serial.Serial(port, 115200, timeout=0, write_timeout=0.1)
         self.buffer = b''
         self.last_rx = time.monotonic()
+        self.on_message = on_message
+        self.on_error = on_error   # called with the text of "ERR,..." lines only
+
+    def _notify(self, direction, message):
+        if self.on_message is not None:
+            self.on_message(direction,message)
 
     def read(self):
         self.buffer += self.serial.read(min(self.serial.in_waiting, 8192))
         rows = []
         while b'\n' in self.buffer:
             line, self.buffer = self.buffer.split(b'\n', 1)
+            text = line.decode('ascii', errors='replace').rstrip('\r')
+            self._notify('RX', text)
+            if self.on_error is not None and text.startswith('ERR,'):
+                self.on_error(text)
             try:
-                rows.append(parse_telemetry(line.decode('ascii')))
+                rows.append(parse_telemetry(text))
                 self.last_rx = time.monotonic()
-            except (ValueError, UnicodeError):
+            except ValueError:
                 pass
         if len(self.buffer) > 8192:
             self.buffer = b''
@@ -38,7 +48,9 @@ class Hardware:
     def command(self, angle):
         if not math.isfinite(angle):
             raise ValueError('Sudut tidak valid')
-        self.serial.write(f'SET,{max(-60, min(60, angle)):.3f}\n'.encode())
+        command=f'SET,{max(-60, min(60, angle)):.3f}\n'
+        self.serial.write(command.encode())
+        self._notify('TX',command.rstrip('\n'))
 
     def close(self):
         try:
