@@ -1,8 +1,10 @@
 # Simulasi Kendali PID pada Gimbal Single-Axis Berbasis Arduino Nano dan Sensor MPU6050
 
-<video src="docs/figures/demo.mp4" controls width="640" height="360">
+<!-- <video src="docs/figures/demo.mp4" controls width="640" height="360">
   Your browser does not support the video tag.
-</video>
+</video> -->
+
+![Demo Hardware](docs/figures/demo.gif)
 
 Repository ini berisi proyek akhir untuk penyelesaian tugas mata kuliah Matematika Sistem Kendali
 
